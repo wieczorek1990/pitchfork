@@ -29,23 +29,23 @@ function checkAnswer(answer) {
     var success;
     switch (answer) {
         case 'lower':
-            success = firstFrequency < secondFrequency;
+            success = firstFrequency > secondFrequency;
             break;
         case 'equal':
             success = firstFrequency == secondFrequency;
             break;
         case 'higher':
-            success = firstFrequency > secondFrequency;
+            success = firstFrequency < secondFrequency;
             break;
     }
     var $body = $('body');
     var $advices = $('.advice');
     if (success) {
-        $body.addClass('body-inverted');
-        $advices.addClass('advice-inverted')
-    } else {
         $body.removeClass('body-inverted');
         $advices.removeClass('advice-inverted')
+    } else {
+        $body.addClass('body-inverted');
+        $advices.addClass('advice-inverted')
     }
     player.pause();
     generateTones();
