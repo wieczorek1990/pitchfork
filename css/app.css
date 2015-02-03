@@ -1,0 +1,57 @@
+.clear {
+    clear: left;
+}
+
+.advice {
+    font-family: 'Raleway', sans-serif;
+}
+
+.body-inverted {
+    background-color: black;
+}
+
+.advice-inverted {
+    color: white;
+}
+
+.tone {
+    float: left;
+    width: 192px;
+    height: 192px;
+}
+
+#first {
+    background-color: dodgerblue;
+    width: 192px;
+    height: 192px;
+}
+
+#second {
+    background-color: indianred;
+    width: 192px;
+    height: 192px;
+}
+
+.switch {
+    float: left;
+    width: 128px;
+    height: 128px;
+}
+
+#lower {
+    background-color: dodgerblue;
+    width: 128px;
+    height: 128px;
+}
+
+#equal {
+    background-color: seagreen;
+    width: 128px;
+    height: 128px;
+}
+
+#higher {
+    background-color: indianred;
+    width: 128px;
+    height: 128px;
+}
