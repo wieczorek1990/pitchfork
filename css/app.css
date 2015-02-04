@@ -1,3 +1,8 @@
+.container {
+    margin: 0 auto;
+    width: 100%;
+}
+
 .clear {
     clear: left;
 }
@@ -54,4 +59,18 @@
     background-color: indianred;
     width: 128px;
     height: 128px;
+}
+
+.text-large {
+    text-align: center;
+    vertical-align: middle;
+    line-height: 192px;
+    font-size: 400%;
+}
+
+.text-small {
+    text-align: center;
+    vertical-align: middle;
+    line-height: 128px;
+    font-size: 300%;
 }
