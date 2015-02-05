@@ -4,16 +4,14 @@ class Settings
   LOWEST_FREQUENCY: 110;
   HIGHEST_FREQUENCY: 880;
   SPAN_DIVIDER: 10;
-
-class Player
-  pause: ->
+  EQUAL_SPAN_DIVIDER: 5;
 
 class Game
   firstFrequency: 0
   secondFrequency: 0
   currentPlayer: 'none'
   isRoundStarting: false
-  player: new Player
+  playerInitialized: false
 
 class UI
   $first: null
@@ -22,38 +20,46 @@ class UI
   $equal: null
   $higher: null
 
+s = new Settings()
+g = new Game()
+
 getFrequencySpan = (frequency) ->
-  base = Settings.LOWEST_FREQUENCY;
+  base = s.LOWEST_FREQUENCY;
   loop
     if base <= frequency and frequency < 2 * base
       break
     else
       base *= 2
-  return base / Settings.SPAN_DIVIDER
+  return base / s.SPAN_DIVIDER
 
 generateTones = ->
-  Game.firstFrequency = rand Settings.LOWEST_FREQUENCY, Settings.HIGHEST_FREQUENCY
-  frequencySpan = getFrequencySpan Game.firstFrequency
+  g.firstFrequency = rand s.LOWEST_FREQUENCY, s.HIGHEST_FREQUENCY
+  frequencySpan = getFrequencySpan g.firstFrequency
   frequencyDifference = rand -frequencySpan, frequencySpan
-  Game.secondFrequency = Game.firstFrequency + frequencyDifference
-  Game.currentPlayer = 'none'
+  if Math.abs(frequencyDifference) > frequencySpan / s.EQUAL_SPAN_DIVIDER
+    g.secondFrequency = g.firstFrequency + frequencyDifference
+  else
+    g.secondFrequency = g.firstFrequency
+  g.currentPlayer = 'none'
+  console.log g.firstFrequency
+  console.log g.secondFrequency
 
 rand = (minimum, maximum) ->
-  rand = minimum + Math.random() * (maximum - minimum + 1)
-  return Math.floor rand
+  random = minimum + Math.random() * (maximum - minimum + 1)
+  return Math.floor random
 
 setPlayer = (frequency, player) ->
-  Game.currentPlayer = player
-  Game.player = new T 'sin', {freq: frequency, mul: 0.4}
+  g.currentPlayer = player
+  g.player = new T 'sin', {freq: frequency, mul: 0.4}
 
 checkAnswer = (answer) ->
   switch answer
     when 'lower'
-      success = Game.firstFrequency > Game.secondFrequency
+      success = g.firstFrequency > g.secondFrequency
     when 'equal'
-      success = Game.firstFrequency == Game.secondFrequency
+      success = g.firstFrequency == g.secondFrequency
     when 'higher'
-      success = Game.firstFrequency < Game.secondFrequency
+      success = g.firstFrequency < g.secondFrequency
   $body = $ 'body'
   $advices = $ '.advice'
   if success
@@ -62,7 +68,7 @@ checkAnswer = (answer) ->
   else
     $body.addClass 'body-inverted'
     $advices.addClass 'advice-inverted'
-  Game.player.pause()
+  g.player.pause()
   generateTones()
 
 animate = (self) ->
@@ -72,52 +78,55 @@ animate = (self) ->
     'height': '-=16px'
     'margin-top': '+=8px'
     'margin-left': '+=8px'
-  }, Settings.ANIMATION_TIME, 'swing', ->
+  }, s.ANIMATION_TIME, 'swing', ->
     $this.animate {
       'width': '+=16px'
       'height': '+=16px'
       'margin-top': '-=8px'
       'margin-left': '-=8px'
-    }, Settings.ANIMATION_TIME
+    }, s.ANIMATION_TIME
 
 play = (frequency, name) ->
-  if currentPlayer != name
-    Game.player.pause()
+  if g.currentPlayer != name
+    if g.playerInitialized
+      g.player.pause()
+    else
+      g.playerInitialized = true
     setPlayer(frequency, name)
-    Game.player.play()
+    g.player.play()
   else
-    Game.player.pause()
-    currentPlayer = 'none'
+    g.player.pause()
+    g.currentPlayer = 'none'
 
 startRound = ->
-  isRoundStarting = true
+  g.isRoundStarting = true
   generateTones()
-  play Game.firstFrequency, 'first'
+  play g.firstFrequency, 'first'
   setTimeout ->
-    play Game.secondFrequency, 'second'
+    play g.secondFrequency, 'second'
     setTimeout ->
-      Game.player.pause()
-      isRoundStarting = false
-    , Settings.PLAYING_TIME
-  , Settings.PLAYING_TIME
+      g.player.pause()
+      g.isRoundStarting = false
+    , s.PLAYING_TIME
+  , s.PLAYING_TIME
 
 check = (self, frequency, name) ->
-  unless Game.isRoundStarting
+  unless g.isRoundStarting
     animate self
     play frequency, name
 
 answer = (self, name) ->
-  unless Game.isRoundStarting
+  unless g.isRoundStarting
     animate self
     checkAnswer name
     startRound()
 
 setupUI = ->
   UI.$first = $ '#first'
-  UI.$second = $ 'second'
-  UI.$lower = $ 'lower'
-  UI.$equal = $ 'equal'
-  UI.$higher = $ 'higher'
+  UI.$second = $ '#second'
+  UI.$lower = $ '#lower'
+  UI.$equal = $ '#equal'
+  UI.$higher = $ '#higher'
 
 setupKeyBindings = ->
   Mousetrap.bind 'left', ->

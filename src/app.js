@@ -3,6 +3,7 @@ var PLAYING_TIME = 2048;
 var LOWEST_FREQUENCY = 110;
 var HIGHEST_FREQUENCY = 880;
 var SPAN_DIVIDER = 10;
+var EQUAL_SPAN_DIVIDER = 5;
 
 var firstFrequency, secondFrequency;
 var currentPlayer;
@@ -30,8 +31,14 @@ function generateTones() {
     firstFrequency = rand(LOWEST_FREQUENCY, HIGHEST_FREQUENCY);
     var d = getDifference(firstFrequency);
     var difference = rand(-d, d);
-    secondFrequency = firstFrequency + difference;
+    if (Math.abs(difference) > d / EQUAL_SPAN_DIVIDER) {
+        secondFrequency = firstFrequency + difference;
+    } else {
+        secondFrequency = firstFrequency;
+    }
     currentPlayer = 'none';
+    console.log("first: " + firstFrequency);
+    console.log("second: " + secondFrequency)
 }
 
 function rand(minimum, maximum) {

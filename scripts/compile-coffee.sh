@@ -1,2 +1,2 @@
 #!/bin/bash
-coffee --compile --output js/ src/
+coffee -c -b -o js/ src/
