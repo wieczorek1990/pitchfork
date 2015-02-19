@@ -142,9 +142,9 @@ setupKeyBindings = ->
 
 setupClicks = ->
   UI.$first.click ->
-    check this, Game.firstFrequency, 'first'
+    check this, g.firstFrequency, 'first'
   UI.$second.click ->
-    check this, Game.secondFrequency, 'second'
+    check this, g.secondFrequency, 'second'
   UI.$lower.click ->
     answer this, 'lower'
   UI.$equal.click ->
