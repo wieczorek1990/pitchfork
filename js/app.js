@@ -214,10 +214,10 @@ setupKeyBindings = function() {
 
 setupClicks = function() {
   UI.$first.click(function() {
-    return check(this, Game.firstFrequency, 'first');
+    return check(this, g.firstFrequency, 'first');
   });
   UI.$second.click(function() {
-    return check(this, Game.secondFrequency, 'second');
+    return check(this, g.secondFrequency, 'second');
   });
   UI.$lower.click(function() {
     return answer(this, 'lower');
