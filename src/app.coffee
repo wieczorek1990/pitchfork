@@ -1,6 +1,6 @@
 class Settings
-  ANIMATION_TIME: 256;
-  PLAYING_TIME: 2048;
+  ANIMATION_TIME: 128;
+  PLAYING_TIME: 1024;
   LOWEST_FREQUENCY: 110;
   HIGHEST_FREQUENCY: 880;
   SPAN_DIVIDER: 10;
@@ -12,6 +12,7 @@ class Game
   currentPlayer: 'none'
   isRoundStarting: false
   playerInitialized: false
+  audioContext: null
 
 class UI
   $first: null
@@ -48,9 +49,17 @@ rand = (minimum, maximum) ->
   random = minimum + Math.random() * (maximum - minimum + 1)
   return Math.floor random
 
+getAudio = (frequency) ->
+  osc = g.audioContext.createOscillator()
+  osc.type = 'sine'
+  osc.frequency.value = frequency
+  osc.connect(g.audioContext.destination)
+  return osc
+
 setPlayer = (frequency, player) ->
   g.currentPlayer = player
-  g.player = new T 'sin', {freq: frequency, mul: 0.4}
+  osc = getAudio(frequency)
+  g.player = osc
 
 checkAnswer = (answer) ->
   switch answer
@@ -68,7 +77,7 @@ checkAnswer = (answer) ->
   else
     $body.addClass 'body-inverted'
     $advices.addClass 'advice-inverted'
-  g.player.pause()
+  g.player.stop()
   generateTones()
 
 animate = (self) ->
@@ -89,13 +98,13 @@ animate = (self) ->
 play = (frequency, name) ->
   if g.currentPlayer != name
     if g.playerInitialized
-      g.player.pause()
+      g.player.stop()
     else
       g.playerInitialized = true
     setPlayer(frequency, name)
-    g.player.play()
+    g.player.start()
   else
-    g.player.pause()
+    g.player.stop()
     g.currentPlayer = 'none'
 
 startRound = ->
@@ -105,7 +114,7 @@ startRound = ->
   setTimeout ->
     play g.secondFrequency, 'second'
     setTimeout ->
-      g.player.pause()
+      g.player.stop()
       g.isRoundStarting = false
     , s.PLAYING_TIME
   , s.PLAYING_TIME
@@ -152,8 +161,12 @@ setupClicks = ->
   UI.$higher.click ->
     answer this, 'higher'
 
+setupAudio = ->
+  g.audioContext = new(window.AudioContext || window.webkitAudioContext);
+
 $ ->
   setupUI()
   setupKeyBindings()
   setupClicks()
+  setupAudio()
   startRound()
