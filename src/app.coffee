@@ -1,65 +1,76 @@
 class Settings
+  # Animations
   ANIMATION_TIME: 128;
-  PLAYING_TIME: 1024;
+  # Frequencies
   LOWEST_FREQUENCY: 110;
   HIGHEST_FREQUENCY: 880;
-  SPAN_DIVIDER: 10;
-  EQUAL_SPAN_DIVIDER: 5;
+  # Audio
+  PLAYING_TIME: 1024;
+  GAIN: 0.1
 
 class Game
   firstFrequency: 0
   secondFrequency: 0
-  currentPlayer: 'none'
-  isRoundStarting: false
-  playerInitialized: false
-  audioContext: null
+  currentPlayer: null
+
+class Audio
+  context: null
+  oscillator: null
+  gain: null
 
 class UI
+  # Repeat
   $first: null
   $second: null
+  # Choices
   $lower: null
   $equal: null
   $higher: null
 
 s = new Settings()
 g = new Game()
+a = new Audio()
+ui = new UI()
 
 getFrequencySpan = (frequency) ->
-  base = s.LOWEST_FREQUENCY;
+  low = s.LOWEST_FREQUENCY;
+
+  base = low
   loop
     if base <= frequency and frequency < 2 * base
       break
     else
       base *= 2
-  return base / s.SPAN_DIVIDER
+  high = base
 
-generateTones = ->
-  g.firstFrequency = rand s.LOWEST_FREQUENCY, s.HIGHEST_FREQUENCY
-  frequencySpan = getFrequencySpan g.firstFrequency
-  frequencyDifference = rand -frequencySpan, frequencySpan
-  if Math.abs(frequencyDifference) > frequencySpan / s.EQUAL_SPAN_DIVIDER
-    g.secondFrequency = g.firstFrequency + frequencyDifference
-  else
-    g.secondFrequency = g.firstFrequency
-  g.currentPlayer = 'none'
-  console.log g.firstFrequency
-  console.log g.secondFrequency
+  return [low, high]
 
 rand = (minimum, maximum) ->
-  random = minimum + Math.random() * (maximum - minimum + 1)
-  return Math.floor random
+    random = minimum + Math.random() * (maximum - minimum + 1)
+    return Math.floor random
 
-getAudio = (frequency) ->
-  osc = g.audioContext.createOscillator()
-  osc.type = 'sine'
-  osc.frequency.value = frequency
-  osc.connect(g.audioContext.destination)
-  return osc
+generateTones = ->
+  first = rand(s.LOWEST_FREQUENCY, s.HIGHEST_FREQUENCY)
 
-setPlayer = (frequency, player) ->
-  g.currentPlayer = player
-  osc = getAudio(frequency)
-  g.player = osc
+  frequencySpan = getFrequencySpan(first)
+  [low, high] = frequencySpan
+  second = rand(low, high)
+
+  g.firstFrequency = first
+  g.secondFrequency = second
+
+getOscillator = (frequency) ->
+  oscillator = a.context.createOscillator()
+
+  gain = a.context.createGain()
+  gain.gain.value = s.GAIN
+  oscillator.connect(gain)
+
+  oscillator.type = 'sine'
+  oscillator.frequency.setValueAtTime(frequency, a.context.currentTime)
+  oscillator.connect(a.context.destination)
+
+  return oscillator
 
 checkAnswer = (answer) ->
   switch answer
@@ -69,6 +80,7 @@ checkAnswer = (answer) ->
       success = g.firstFrequency == g.secondFrequency
     when 'higher'
       success = g.firstFrequency < g.secondFrequency
+
   $body = $ 'body'
   $advices = $ '.advice'
   if success
@@ -77,7 +89,8 @@ checkAnswer = (answer) ->
   else
     $body.addClass 'body-inverted'
     $advices.addClass 'advice-inverted'
-  g.player.stop()
+
+  a.oscillator.stop()
   generateTones()
 
 animate = (self) ->
@@ -96,28 +109,13 @@ animate = (self) ->
     }, s.ANIMATION_TIME
 
 play = (frequency, name) ->
-  if g.currentPlayer != name
-    if g.playerInitialized
-      g.player.stop()
-    else
-      g.playerInitialized = true
-    setPlayer(frequency, name)
-    g.player.start()
+  if g.currentPlayer == name
+    a.oscillator.stop()
   else
-    g.player.stop()
-    g.currentPlayer = 'none'
-
-startRound = ->
-  g.isRoundStarting = true
-  generateTones()
-  play g.firstFrequency, 'first'
-  setTimeout ->
-    play g.secondFrequency, 'second'
-    setTimeout ->
-      g.player.stop()
-      g.isRoundStarting = false
-    , s.PLAYING_TIME
-  , s.PLAYING_TIME
+    a.oscillator?.stop()
+    a.oscillator = getOscillator(frequency)
+    a.oscillator.start()
+  g.currentPlayer = name
 
 check = (self, frequency, name) ->
   unless g.isRoundStarting
@@ -131,42 +129,61 @@ answer = (self, name) ->
     startRound()
 
 setupUI = ->
-  UI.$first = $ '#first'
-  UI.$second = $ '#second'
-  UI.$lower = $ '#lower'
-  UI.$equal = $ '#equal'
-  UI.$higher = $ '#higher'
+  ui.$first = $ '#first'
+  ui.$second = $ '#second'
+  ui.$lower = $ '#lower'
+  ui.$equal = $ '#equal'
+  ui.$higher = $ '#higher'
 
 setupKeyBindings = ->
   Mousetrap.bind 'left', ->
-    UI.$first.click()
+    ui.$first.click()
   Mousetrap.bind 'right', ->
-    UI.$second.click()
+    ui.$second.click()
   Mousetrap.bind 'down', ->
-    UI.$lower.click()
+    ui.$lower.click()
   Mousetrap.bind 'space', ->
-    UI.$equal.click()
+    ui.$equal.click()
   Mousetrap.bind 'up', ->
-    UI.$higher.click()
+    ui.$higher.click()
 
 setupClicks = ->
-  UI.$first.click ->
+  ui.$first.click ->
     check this, g.firstFrequency, 'first'
-  UI.$second.click ->
+  ui.$second.click ->
     check this, g.secondFrequency, 'second'
-  UI.$lower.click ->
+  ui.$lower.click ->
     answer this, 'lower'
-  UI.$equal.click ->
+  ui.$equal.click ->
     answer this, 'equal'
-  UI.$higher.click ->
+  ui.$higher.click ->
     answer this, 'higher'
 
 setupAudio = ->
-  g.audioContext = new(window.AudioContext || window.webkitAudioContext);
+  audioContext = window.AudioContext || window.webkitAudioContext || false
+  if audioContext
+    a.context = new audioContext();
+  else
+    console.error(
+        'Nor window.AudioContext, nor window.webkitAudioContext is supported. Cannot continue.'
+    )
 
-$ ->
+startRound = ->
+  generateTones()
+  play g.firstFrequency, 'first'
+  setTimeout ->
+    play g.secondFrequency, 'second'
+    setTimeout ->
+      a.oscillator.stop()
+    , s.PLAYING_TIME
+  , s.PLAYING_TIME
+
+setup = ->
   setupUI()
   setupKeyBindings()
   setupClicks()
   setupAudio()
+
+$ ->
+  setup()
   startRound()
